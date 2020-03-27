@@ -9,10 +9,10 @@
             "type": "python",
             "request": "launch",
             "module": "scrapy",
-            "cwd": "${workspaceRoot}/demo", // 项目路径
+            "cwd": "${workspaceRoot}/beian", // 项目路径
             "args": [
                 "crawl",
-                "demo" // 爬虫名称
+                "beian" // 爬虫名称
             ]
         }
     ]

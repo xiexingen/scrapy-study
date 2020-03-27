@@ -7,31 +7,28 @@ from demo.items import DemoItem
 import scrapy
 
 
-class DemoSpider(scrapy.Spider):
-    name = "demo"
-    allowed_domains = ["huxiu.com"]
+class QuotesSpider(scrapy.Spider):
+    name = 'demo'
     start_urls = [
-        "http://www.huxiu.com/index.php"
+        'http://www.chinadrugtrials.org.cn/eap/clinicaltrials.searchlist',
     ]
 
     def parse(self, response):
-        for sel in response.xpath('//div[@class="mod-info-flow"]/div/div[@class="mob-ctt"]'):
-            item = DemoItem()
-            item.title = sel.xpath('h2/a/text()')[0].extract()
-            item.link = sel.xpath('h2/a/@href')[0].extract()
-            url = response.urljoin(item['link'])
-            item.desc = sel.xpath('div[@class="mob-sub"]/text()')[0].extract()
-            # print(item['title'],item['link'],item['desc'])
+        for tr in response.xpath('//table[@class="Tab"]//tr[position()>1]'):
+            itemRow = {
+                'id': tr.xpath('td[2]/a/@id').get(),
+                'registryNo': tr.xpath('td[2]/a/text()').re(r'\w+')[0],
+                'status':tr.xpath('td[3]/a/text()'),
+                'drugName':tr.xpath('td[4]/text()'),
+                'shutZ':tr.xpath('td[5]/text()'),
+                'title':tr.xpath('td[6]/text()'),
+            }
+            print(itemRow)
+        #yield from response.follow_all(anchors, callback=self.parse)
 
-            yield scrapy.Request(url, callback=self.parse_article)
-
-
-    def parse_article(self, response):
-         detail = response.xpath('//div[@class="article-wrap"]')
-         item = DemoItem()
-         item['title'] = detail.xpath('h1/text()')[0].extract()
-         item['link'] = response.url
-         item['posttime'] = detail.xpath(
-            'div[@class="article-author"]/span[@class="article-time"]/text()')[0].extract()
-         print(item['title'],item['link'],item['posttime'])
-         yield item
+        #     next_page = response.css('li.next a::attr(href)').get()
+        # if next_page is not None:
+        #     next_page = response.urljoin(next_page)
+        #     yield scrapy.Request(next_page, callback=self.parse)
+        # yield response.follow(href, callback=self.parse)
+            yield itemRow
