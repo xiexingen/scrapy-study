@@ -12,6 +12,8 @@ class BeianItem(scrapy.Item): # 备案管理index
     # define the fields for your item here like:
     # name = scrapy.Field()
     
+    # 对应备案系统数据主键Id
+    _id=scrapy.Field()
     # 备案号
     recordNo=scrapy.Field()
     # 省份
@@ -28,8 +30,7 @@ class BeianItem(scrapy.Item): # 备案管理index
     linkTel=scrapy.Field()
     # 行号
     index=scrapy.Field()
-    # 对应备案系统数据Id
-    companyId=scrapy.Field()
+    
     # 备案状态 8:已备案 9:取消备案
     recordStatus=scrapy.Field()
     # 备案状态-文本

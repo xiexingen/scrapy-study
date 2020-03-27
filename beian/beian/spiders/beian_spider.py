@@ -54,7 +54,7 @@ class BeianSpider(scrapy.Spider):
             result['linkMan'] = item['linkMan']
             result['linkTel'] = item['linkTel']
             result['index'] = item['ROW2']
-            result['companyId'] = item['companyId']
+            result['_id'] = item['companyId']
             result['recordStatus'] = item['recordStatus']
             if item['recordStatus'] == '8':
                 result['recordStatusText'] = '已备案'
@@ -65,8 +65,8 @@ class BeianSpider(scrapy.Spider):
             
             # 请求详情页
             detailUrl = "http://beian.cfdi.org.cn:9000/CTMDS/pub/PUB010100.do?method=handle07&compId={compId}&_={timespan}".format(
-            compId=result['companyId'], timespan=datetime.datetime.now().strftime('%Y%m%d%H%M%S'))
-            yield scrapy.Request(detailUrl, callback=self.parse_detail,meta={'index':result})
+            compId=result['_id'], timespan=datetime.datetime.now().strftime('%Y%m%d%H%M%S'))
+            yield scrapy.Request(detailUrl, callback=self.parse_detail,meta={'index':result},errback=self.log_error_back,dont_filter=True)
 
     def parse_detail(self, response):
         result = response.meta['index']
@@ -96,3 +96,9 @@ class BeianSpider(scrapy.Spider):
             result['inspectionInformations'].append(inspectionInformation)
 
         yield result
+
+    def log_error_back(self, failure):
+         # 日志记录所有的异常信息
+        self.logger.error(repr(failure))
+        request = failure.request
+        self.logger.error('error on %s', request.url)

@@ -65,6 +65,7 @@ DOWNLOAD_DELAY = 0.4 # 250ms
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 #ITEM_PIPELINES = {
+    #'crawlab.pipelines.CrawlabMongoPipeline': 888
 #    'beian.pipelines.BeianPipeline': 300,
 #}
 
@@ -90,5 +91,5 @@ DOWNLOAD_DELAY = 0.4 # 250ms
 #HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
 
 FEED_EXPORT_ENCODING = 'utf-8-sig'
-LOG_LEVEL = "WARNING"  # 设置日志等级。 默认debug级别
+# LOG_LEVEL = "WARN"  # 设置日志等级。 默认debug级别
 # LOG_FILE = "./log.log"  # 设置日志保存位置
