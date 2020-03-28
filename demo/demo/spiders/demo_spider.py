@@ -32,3 +32,15 @@ class QuotesSpider(scrapy.Spider):
         #     yield scrapy.Request(next_page, callback=self.parse)
         # yield response.follow(href, callback=self.parse)
             yield itemRow
+
+    def process_exception(self, request, exception, spider):
+        self._faillog(request, u'EXCEPTION', exception, spider)
+        return request
+
+    def _faillog(self, request, errorType, reason, spider):
+        with codecs.open('log/faillog.log', 'a', encoding='utf-8') as file:
+            file.write("%(now)s [%(error)s] %(url)s reason: %(reason)s \r\n" %
+                       {'now':datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        'error': errorType,
+                        'url': request.url,
+                        'reason': reason})
