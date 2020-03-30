@@ -104,7 +104,7 @@ class CdeDownloaderMiddleware(object):
         spider.logger.info('Spider opened: %s' % spider.name)
 
 
-class RandomUserAgent(object): # 自定义UserAgent中间件
+class RandomUserAgentMiddleware(object): # 自定义UserAgent中间件
     def __init__(self, useragents):
         self.useragents = useragents
 

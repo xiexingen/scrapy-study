@@ -21,7 +21,7 @@ class BeianSpider(scrapy.Spider):
     # ]
 
     def start_requests(self):
-        indexUrl = "http://beian.cfdi.org.cn:9000/CTMDS/pub/PUB010100.do?method=handle06&_dt={timespan}".format(
+        indexUrl = "http://beian.cfdi.org.cn:9000/CTMDS/pub/PUB010100.do?method=handle06&__dt={timespan}".format(
             timespan=datetime.datetime.now().strftime('%Y%m%d%H%M%S'))
         form_data = {'pageSize': str(self.pageSize), 'curPage': '1'}
         yield scrapy.FormRequest(indexUrl, callback=self.parse, method='POST',formdata=form_data)
@@ -34,7 +34,7 @@ class BeianSpider(scrapy.Spider):
         # 请求其他页码的数据
         total =int(repJson['totalRows'])
         totalPages =math.ceil(total/self.pageSize)
-        for page in range(1, total):
+        for page in range(1, totalPages):
             indexUrl = "http://beian.cfdi.org.cn:9000/CTMDS/pub/PUB010100.do?method=handle06&_dt={timespan}".format(
             timespan=datetime.datetime.now().strftime('%Y%m%d%H%M%S'))
             form_data = {'pageSize': str(self.pageSize), 'curPage': str(page)}
