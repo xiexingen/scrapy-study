@@ -12,10 +12,9 @@ class JsonFilePipeLine(object):
     #     pass
     # def open_spider(self, item):  # 蜘蛛打开的时执行
     #     pass
-
-    def process_item(self, item):
-        line = json.dumps(dict(item)) + "\n"
-        file=open('novel.json', 'wb')
+    def process_item(self, item, spider):
+        line = json.dumps(dict(item), ensure_ascii=False)
+        file=open('data/{0}.json'.format(item['_id']), 'wb')
         file.write(line.encode('utf-8'))
         return item
 

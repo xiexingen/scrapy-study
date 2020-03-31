@@ -16,7 +16,7 @@ class CdeItem(scrapy.Item):  # Cde 实体
     # name = scrapy.Field()
     
     # 存放登记号 作为主键Id
-    _id=scrapy.Field();
+    _id=scrapy.Field()
     # 项目主体信息
     Project = scrapy.Field()
     # 项目申办方信息
@@ -24,7 +24,7 @@ class CdeItem(scrapy.Item):  # Cde 实体
     # 主要研究者信息(组长单位)
     MainInvestigators = scrapy.Field()
     # 临床试验信息  2、试验设计（单选）
-    ClinicalTrialInformation=scrapy.Field
+    ClinicalTrialInformation=scrapy.Field()
     # 各参加机构信息
     Hospitals = scrapy.Field()
     # 伦理委员会信息
@@ -38,14 +38,12 @@ class ProjectItem(scrapy.Item):  # 项目主信息
     indication = scrapy.Field()
    # 试验方案编号
     protocolNo = scrapy.Field()
-    # 化学药备案号
-    chemicalMedicineNo=scrapy.Field()
     # 申办者联系人
     sponsorConcatName = scrapy.Field()
     # 首次公示信息日期
     firstPublishDate = scrapy.Field()
-    # # 临床申请受理号
-    # acceptNo = scrapy.Field()
+    # 临床申请受理号 -- 化学药备案号
+    acceptNo = scrapy.Field()
     # 试验通俗题目
     popularTitle = scrapy.Field()
     # 试验专业题目

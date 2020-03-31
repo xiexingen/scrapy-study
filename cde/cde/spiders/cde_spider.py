@@ -9,6 +9,8 @@ from scrapy import Selector
 from w3lib.html import remove_tags
 import math
 import json
+import re
+from scrapy.utils.markup import remove_comments
 
 
 class CDESPider(scrapy.Spider):
@@ -29,7 +31,7 @@ class CDESPider(scrapy.Spider):
         totalPages =math.ceil(total/self.pageSize)
         # indexUrl = "http://www.chinadrugtrials.org.cn/eap/clinicaltrials.searchlist"
         detailUrl="http://www.chinadrugtrials.org.cn/eap/clinicaltrials.searchlistdetail"
-        for page in range(10215, totalPages):       
+        for page in range(1, totalPages):       
             form_data = {'ckm_index': str(page),'pagesize': str(self.pageSize),'currentpage':'1','rule':'CTR','sort2':'desc','sort':'desc'}
             yield scrapy.FormRequest(detailUrl, callback=self.parse_detail, method='POST',formdata=form_data)
 
@@ -50,39 +52,40 @@ class CDESPider(scrapy.Spider):
 
     def parse_detail(self, response):
         try:
+            html=Selector(text=remove_comments(response.text))
             cdeItem=CdeItem()
 
-            cdeContainer=response.xpath('//*[@id="div_open_close_01"]')
+            cdeContainer=html.xpath('//*[@id="div_open_close_01"]')
 
             projectItem= ProjectItem()
 
-            projectMainContainer=response.css('.register_mainB>.apply_zhgl>.cxtj_tm')
-            cdeItem['_id']=projectMainContainer.xpath('./table//tr[1]/td[2]/text()').extract_first(default='').strip()
+            projectMainContainer=html.css('.register_mainB>.apply_zhgl>.cxtj_tm')
+            cdeItem['_id']=projectMainContainer.xpath('table//tr[1]/td[2]/text()').extract_first(default='').strip()
             # 登记号
             projectItem['registrationNo']=cdeItem['_id']
             # 试验状态
-            projectItem['studyStatus']=projectMainContainer.xpath('./table//tr[1]/td[4]/text()').extract_first(default='').strip()
+            projectItem['studyStatus']=projectMainContainer.xpath('table//tr[1]/td[4]/text()').extract_first(default='').strip()
             # 申办者联系人
-            projectItem['sponsorConcatName']=projectMainContainer.xpath('./table//tr[2]/td[2]/text()').extract_first(default='').strip()
+            projectItem['sponsorConcatName']=projectMainContainer.xpath('table//tr[2]/td[2]/text()').extract_first(default='').strip()
             # 首次公示信息日期
-            projectItem['firstPublishDate']=projectMainContainer.xpath('./table//tr[2]/td[4]/text()').extract_first(default='').strip()
+            projectItem['firstPublishDate']=projectMainContainer.xpath('table//tr[2]/td[4]/text()').extract_first(default='').strip()
         
             # 适应症
-            projectItem['indication']=cdeContainer.xpath('./table//tr[2]/td[2]/text()').extract_first(default='').strip()
+            projectItem['indication']=cdeContainer.xpath('table//tr[2]/td[2]/text()').extract_first(default='').strip()
             # 试验通俗题目
-            projectItem['popularTitle']=cdeContainer.xpath('./table//tr[3]/td[2]/text()').extract_first(default='').strip()
+            projectItem['popularTitle']=cdeContainer.xpath('table//tr[3]/td[2]/text()').extract_first(default='').strip()
             # 试验专业题目
-            projectItem['studyTitle']=cdeContainer.xpath('./table//tr[4]/td[2]/text()').extract_first(default='').strip()
+            projectItem['studyTitle']=cdeContainer.xpath('table//tr[4]/td[2]/text()').extract_first(default='').strip()
             # 试验方案编号
-            projectItem['protocolNo']=cdeContainer.xpath('./table//tr[5]/td[2]/text()').extract_first(default='').strip()
-            # 化学药备案号
-            projectItem['chemicalMedicineNo']=cdeContainer.xpath('./table//tr[6]/td[2]/text()').extract_first(default='').strip()
+            projectItem['protocolNo']=cdeContainer.xpath('table//tr[5]/td[2]/text()').extract_first(default='').strip()
+            #临床申请受理号 -- 化学药备案号
+            projectItem['acceptNo']=cdeContainer.xpath('table//tr[6]/td[2]/text()').extract_first(default='').strip()
             # 药物名称
-            projectItem['drugName']=cdeContainer.xpath('./table//tr[7]/td[2]/text()').extract_first(default='').strip()
+            projectItem['drugName']=cdeContainer.xpath('table//tr[7]/td[2]/text()').extract_first(default='').strip()
             # 药物类型
-            projectItem['drugClassification']=cdeContainer.xpath('./table//tr[8]/td[2]/text()').extract_first(default='').strip()
+            projectItem['drugClassification']=cdeContainer.xpath('table//tr[8]/td[2]/text()').extract_first(default='').strip()
             # 试验相关信息
-            projectItem['otherInfo']='<div>{}</div>'.format(response.css('.register_main>.register_mainB>.apply_zhgl').xpath('./table').extract_first())
+            projectItem['otherInfo']='<div>{}</div>'.format(html.css('.register_main>.register_mainB>.apply_zhgl').xpath('./table').extract_first())
             # 首例入组日期
             # projectItem['firstSubjectEncroEnrollmentDate']=cdeContainer.xpath('.//table[4]//tr/td/text()').extract_first(default='').strip()
             projectItem['firstSubjectEncroEnrollmentDate']=cdeContainer.xpath(".//div[@class='STYLE2'][contains(., '第一例受试者入组日期')]/following-sibling::table[1]//td/text()").extract_first(default='').strip()
@@ -93,7 +96,7 @@ class CDESPider(scrapy.Spider):
             #projectItem['studyStatus2']=cdeContainer.xpath('.//table[8]//tr/td').extract_first(default='').strip()      
             projectItem['studyStatus2']=cdeContainer.xpath(".//div[@class='STYLE2'][contains(., '试验状态')]/following-sibling::table[1]//td/text()").extract_first(default='').replace("\n","").replace('\t','').replace('\r','').strip()
 
-            cdeItem['Project']=projectItem
+            cdeItem['Project']=dict(projectItem)
 
             ## 申办方信息
             sponsorInfoItem=SponsorInfoItem()
@@ -101,98 +104,99 @@ class CDESPider(scrapy.Spider):
             #申办方名称
             sponsorInfoItem['sponsorNames']=[]
             for tr in sponsorContainer.xpath('.//tr[1]/td[2]/table/tr'):
-                sponsorInfoItem['sponsorNames'].append(tr.xpath('./td[2]/text()').extract_first(default='').strip('/'))
+                sponsorInfoItem['sponsorNames'].append(tr.xpath('td[2]/text()').extract_first(default='').strip('/'))
             #联系人姓名
-            sponsorInfoItem['concatName']=sponsorContainer.xpath('.//tr[2]/td[2]/text()').extract_first(default='').strip()
+            sponsorInfoItem['concatName']=sponsorContainer.xpath('tr[2]/td[2]/text()').extract_first(default='').strip()
             #联系电话
-            sponsorInfoItem['tel']=sponsorContainer.xpath('.//tr[3]/td[2]/text()').extract_first(default='').strip()
+            sponsorInfoItem['tel']=sponsorContainer.xpath('tr[3]/td[2]/text()').extract_first(default='').strip()
             #Email
-            sponsorInfoItem['email']=sponsorContainer.xpath('.//tr[3]/td[4]/text()').extract_first(default='').strip()
+            sponsorInfoItem['email']=sponsorContainer.xpath('tr[3]/td[4]/text()').extract_first(default='').strip()
             #地址
-            sponsorInfoItem['address']=sponsorContainer.xpath('.//tr[4]/td[2]/text()').extract_first(default='').strip()
+            sponsorInfoItem['address']=sponsorContainer.xpath('tr[4]/td[2]/text()').extract_first(default='').strip()
             #邮编
-            sponsorInfoItem['zipCode']=sponsorContainer.xpath('.//tr[4]/td[4]/text()').extract_first(default='').strip()
+            sponsorInfoItem['zipCode']=sponsorContainer.xpath('tr[4]/td[4]/text()').extract_first(default='').strip()
             #费用来源
             # sponsorInfoItem['costFrom']=sponsorContainer.xpath('.//tr[5]/td[2]/text()').extract_first(default='').strip()
-            sponsorInfoItem['costFrom']= ''.join([item.strip() for item in sponsorContainer.xpath('.//tr[5]/td[2]/text()').extract()])
+            sponsorInfoItem['costFrom']= ''.join([item.strip() for item in sponsorContainer.xpath('tr[5]/td[2]/text()').extract()])
 
-            cdeItem['SponsorInfo']=sponsorInfoItem
+            cdeItem['SponsorInfo']=dict(sponsorInfoItem)
 
             ## 试验设计信息
             clinicalTrialInfomation=ClinicalTrialInformationItem()
             clinicalTrialContainer=cdeContainer.xpath('./table[3]')
             #试验目的
-            clinicalTrialInfomation['testPurpose']=clinicalTrialContainer.xpath('.//tr[2]/td/text()').extract_first(default='').strip()
+            clinicalTrialInfomation['testPurpose']=clinicalTrialContainer.xpath('tr[2]/td/text()').extract_first(default='').strip()
             #试验分类
-            clinicalTrialInfomation['testType']=clinicalTrialContainer.xpath('.//tr[4]/td/table//tr[1]/td[3]/text()').extract_first(default='').strip()
+            clinicalTrialInfomation['testType']=clinicalTrialContainer.xpath('tr[4]/td/table//tr[1]/td[3]/text()').extract_first(default='').strip()
             #试验分期
-            clinicalTrialInfomation['testStaging']=clinicalTrialContainer.xpath('.//tr[4]/td/table//tr[2]/td[3]/text()').extract_first(default='').strip()
+            clinicalTrialInfomation['testStaging']=clinicalTrialContainer.xpath('tr[4]/td/table//tr[2]/td[3]/text()').extract_first(default='').strip()
             #设计类型
-            clinicalTrialInfomation['testDesignType']=clinicalTrialContainer.xpath('.//tr[4]/td/table//tr[3]/td[3]/text()').extract_first(default='').strip()
+            clinicalTrialInfomation['testDesignType']=clinicalTrialContainer.xpath('tr[4]/td/table//tr[3]/td[3]/text()').extract_first(default='').strip()
             #随机化
-            clinicalTrialInfomation['testRandomization']=clinicalTrialContainer.xpath('.//tr[4]/td/table//tr[4]/td[3]/text()').extract_first(default='').strip()
+            clinicalTrialInfomation['testRandomization']=clinicalTrialContainer.xpath('tr[4]/td/table//tr[4]/td[3]/text()').extract_first(default='').strip()
             #盲法
-            clinicalTrialInfomation['testBlind']=clinicalTrialContainer.xpath('.//tr[4]/td/table//tr[5]/td[3]/text()').extract_first(default='').strip()
+            clinicalTrialInfomation['testBlind']=clinicalTrialContainer.xpath('tr[4]/td/table//tr[5]/td[3]/text()').extract_first(default='').strip()
             #试验范围
-            clinicalTrialInfomation['testRange']=clinicalTrialContainer.xpath('.//tr[4]/td/table//tr[6]/td[3]/text()').extract_first(default='').strip()
+            clinicalTrialInfomation['testRange']=clinicalTrialContainer.xpath('tr[4]/td/table//tr[6]/td[3]/text()').extract_first(default='').strip()
             ##  3、受试者信息
-            #年龄
-            clinicalTrialInfomation['subjectAge']=clinicalTrialContainer.xpath('.//tr[6]/td[2]/text()').extract_first(default='').strip()
+            #年龄 -- 去掉内容中的\t\n\r
+            clinicalTrialInfomation['subjectAge']=re.sub(r"\s+", "", clinicalTrialContainer.xpath('tr[6]/td[2]/text()').extract_first(default='').strip())
             #性别
-            clinicalTrialInfomation['subjectGeneder']=clinicalTrialContainer.xpath('.//tr[7]/td[2]/text()').extract_first(default='').strip()
+            clinicalTrialInfomation['subjectGeneder']=clinicalTrialContainer.xpath('tr[7]/td[2]/text()').extract_first(default='').strip()
             #健康受试者
-            clinicalTrialInfomation['subjectHealth']=clinicalTrialContainer.xpath('.//tr[8]/td[2]/text()').extract_first(default='').strip()
+            clinicalTrialInfomation['subjectHealth']=clinicalTrialContainer.xpath('tr[8]/td[2]/text()').extract_first(default='').strip()
             # 目标入组人数
-            clinicalTrialInfomation['subjectTargetEnrollment']=clinicalTrialContainer.xpath('./tody/tr[11]/td[2]/text()').extract_first(default='').strip()
+            clinicalTrialInfomation['subjectTargetEnrollment']=clinicalTrialContainer.xpath('tr[11]/td[2]/text()').extract_first(default='').strip()
             # 实际入组人数
-            clinicalTrialInfomation['subjectActualEnrollment']=clinicalTrialContainer.xpath('.//tr[12]/td[2]/text()').extract_first(default='').strip()
+            clinicalTrialInfomation['subjectActualEnrollment']=clinicalTrialContainer.xpath('tr[12]/td[2]/text()').extract_first(default='').strip()
             # 数据安全监察委员会
-            clinicalTrialInfomation['subjectDMC']=clinicalTrialContainer.xpath('.//tr[19]/td/text()').re_first(r'([有|无])')
+            clinicalTrialInfomation['subjectDMC']=clinicalTrialContainer.xpath('tr[19]/td/text()').re_first(r'([有|无])')
             # 为受试者购买试验伤害保险
-            clinicalTrialInfomation['subjectInjuryInsurance']=clinicalTrialContainer.xpath('.//tr[20]/td/text()').re_first(r'([有|无])')
+            clinicalTrialInfomation['subjectInjuryInsurance']=clinicalTrialContainer.xpath('tr[20]/td/text()').re_first(r'([有|无])')
 
-            cdeItem['ClinicalTrialInformation']=clinicalTrialInfomation
+            cdeItem['ClinicalTrialInformation']=dict(clinicalTrialInfomation)
 
             ## 主要研究者信息
             mainInvestigator=MainInvestigatorItem()
-            mainInvestigatorContainer=cdeContainer.xpath('./table[6]//tr[2]/td/table')
+            mainInvestigatorContainer=cdeContainer.xpath('table[6]//tr[2]/td/table')
             # 姓名 #去除人名中的杂质 如:(叶定伟，医学博士)
-            tempName=mainInvestigatorContainer.xpath('.//tr[1]/td[2]/text()').extract_first(default='').strip()
-            mainInvestigatorContainer['name'] =tempName.re_first(r'\s*(.+)\s*,')
+            # tempName=mainInvestigatorContainer.xpath('tr[1]/td[2]/text()').extract_first(default='').strip()
+            tempNames=re.split('[,，]',mainInvestigatorContainer.xpath('.//td[contains(.,"姓名")]//following-sibling::td[1]/text()').extract_first(default='').strip())
+            mainInvestigator['name'] =tempNames[0] if len(tempNames)>0 else ''
             # 获取专业认证 从姓名中解析 如:(叶定伟，医学博士)
-            mainInvestigatorContainer['certification'] = tempName.re_first(r',\s*(.+)\s*')
+            mainInvestigator['certification'] = tempNames[1] if len(tempNames)>1 else ''
             # 职称
-            mainInvestigatorContainer['jobTitle'] =mainInvestigatorContainer.xpath('.//tr[1]/td[4]/text()').extract_first(default='').strip()
+            mainInvestigator['jobTitle'] =mainInvestigatorContainer.xpath('.//td[contains(.,"职称")]//following-sibling::td[1]/text()').extract_first(default='').strip()
             # 电话
-            mainInvestigatorContainer['tel'] =mainInvestigatorContainer.xpath('.//tr[2]/td[2]/text()').extract_first(default='').strip()
+            mainInvestigator['tel'] =mainInvestigatorContainer.xpath('.//td[contains(.,"电话")]//following-sibling::td[1]/text()').extract_first(default='').strip()
             # Email
-            mainInvestigatorContainer['email'] =mainInvestigatorContainer.xpath('.//tr[2]/td[4]/text()').extract_first(default='').strip()
+            mainInvestigator['email'] =mainInvestigatorContainer.xpath('.//td[contains(.,"Email")]//following-sibling::td[1]/text()').extract_first(default='').strip()
             # 地址
-            mainInvestigatorContainer['address'] =mainInvestigatorContainer.xpath('.//tr[3]/td[2]/text()').extract_first(default='').strip()
+            mainInvestigator['address'] =mainInvestigatorContainer.xpath('.//td[contains(.,"邮政地址")]//following-sibling::td[1]/text()').extract_first(default='').strip()
             # 邮编
-            mainInvestigatorContainer['zipCode'] = mainInvestigatorContainer.xpath('.//tr[3]/td[4]/text()').extract_first(default='').strip()
+            mainInvestigator['zipCode'] = mainInvestigatorContainer.xpath('.//td[contains(.,"邮编")]//following-sibling::td[1]/text()').extract_first(default='').strip()
             # 单位名称
-            mainInvestigatorContainer['companyName'] =mainInvestigatorContainer.xpath('.//tr[4]/td[2]/text()').extract_first(default='').strip()
+            mainInvestigator['companyName'] =mainInvestigatorContainer.xpath('.//td[contains(.,"单位名称")]//following-sibling::td[1]/text()').extract_first(default='').strip()
             
-            cdeItem['MainInvestigators']=mainInvestigator
+            cdeItem['MainInvestigators']=dict(mainInvestigator)
 
             ## 各参加机构信息
             cdeItem['Hospitals']=[]
             for tr in cdeContainer.xpath('//*[@id="hspTable"]//tr[position()>1]'):
                 hospital=HospitalItem()
                 # 序号
-                hospital['no']=tr.xpath('./td[1]/text()').extract_first(default='').strip()
+                hospital['no']=tr.xpath('td[1]/text()').extract_first(default='').strip()
                 # 机构名称
-                hospital['name'] = tr.xpath('./td[2]/text()').extract_first(default='').strip()
+                hospital['name'] = tr.xpath('td[2]/text()').extract_first(default='').strip()
                 # 主要研究者
-                hospital['mainSponsorName'] = tr.xpath('./td[3]/text()').extract_first(default='').strip()
+                hospital['mainSponsorName'] = tr.xpath('td[3]/text()').extract_first(default='').strip()
                 # 国家
-                hospital['state'] = tr.xpath('./td[4]/text()').extract_first(default='').strip()
+                hospital['state'] = tr.xpath('td[4]/text()').extract_first(default='').strip()
                 # 所在省
-                hospital['province'] = tr.xpath('./td[5]/text()').extract_first(default='').strip()
+                hospital['province'] = tr.xpath('td[5]/text()').extract_first(default='').strip()
                 # 所在市
-                hospital['city'] = tr.xpath('./td[6]/text()').extract_first(default='').strip()
-                cdeItem['Hospitals'].append(hospital)
+                hospital['city'] = tr.xpath('td[6]/text()').extract_first(default='').strip()
+                cdeItem['Hospitals'].append(dict(hospital))
 
 
             ## 伦理委员会信息
@@ -200,15 +204,15 @@ class CDESPider(scrapy.Spider):
             for tr in cdeContainer.xpath('//*[@id="div_open_close_01"]/table[7]//tr[position()>1]'):
                 ec=ECItem()
                 # 下标
-                ec['no'] =tr.xpath('./td[1]/text()').extract_first(default='').strip()
+                ec['no'] =tr.xpath('td[1]/text()').extract_first(default='').strip()
                 # 名称
-                ec['name'] =tr.xpath('./td[2]/text()').extract_first(default='').strip()
+                ec['name'] =tr.xpath('td[2]/text()').extract_first(default='').strip()
                 # 审查结论
-                ec['approveResult'] = tr.xpath('./td[3]/text()').extract_first(default='').strip()
+                ec['approveResult'] = tr.xpath('td[3]/text()').extract_first(default='').strip()
                 # 审查日期
-                ec['approveDate'] = tr.xpath('./td[4]/text()').extract_first(default='').strip()
+                ec['approveDate'] = tr.xpath('td[4]/text()').extract_first(default='').strip()
 
-                cdeItem['ECs'].append(ec)
+                cdeItem['ECs'].append(dict(ec))
         
             yield cdeItem
         except Exception as e:
