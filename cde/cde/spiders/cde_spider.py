@@ -6,11 +6,10 @@ Desc :
 from cde.items import CdeItem, ProjectItem, SponsorInfoItem, MainInvestigatorItem, ClinicalTrialInformationItem, HospitalItem, ECItem
 import scrapy 
 from scrapy import Selector
-from w3lib.html import remove_tags
+from w3lib.html import remove_comments
 import math
 import json
 import re
-from scrapy.utils.markup import remove_comments
 
 
 class CDESPider(scrapy.Spider):
