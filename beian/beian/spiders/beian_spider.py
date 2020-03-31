@@ -27,6 +27,14 @@ class BeianSpider(scrapy.Spider):
         yield scrapy.FormRequest(indexUrl, callback=self.parse, method='POST',formdata=form_data)
         # yield scrapy.Request(indexUrl, callback=self.parse, method='POST', body=json.dumps(formData), headers={'Content-Type': 'application/json','Accept':'application/json'})
 
+        # #http://beian.cfdi.org.cn:9000/CTMDS/apps/pub/drugPublic.jsp
+        # indexUrl = "http://beian.cfdi.org.cn:9000/CTMDS/pub/PUB010100.do?method=handle06&__dt={timespan}".format(
+        #     timespan=datetime.datetime.now().strftime('%Y%m%d%H%M%S'))
+        # regNos=['2020000043']
+        # for reg in regNos:
+        #     form_data = {'pageSize': str(self.pageSize), 'curPage': '1','recordNo':reg}
+        #     yield scrapy.FormRequest(indexUrl, callback=self.parse_list, method='POST',formdata=form_data)
+
     def parse(self, response):
         repJson=json.loads(response.text)
         if repJson.get('success')!=True:
@@ -73,10 +81,16 @@ class BeianSpider(scrapy.Spider):
         # 机构基本信息
         mainContainer=response.xpath('//*[@id="tabContent1"]')
         result['orgLevel']=mainContainer.xpath('div/div[3]/div/text()').get().strip()
+        # 备案时间（首次）-去掉非日期文字
         #result['recordFirstDate']=mainContainer.xpath('div/div[7]/div/text()').get().strip()
-        result['recordFirstDate']=mainContainer.xpath("div/div[contains(.,'备案时间')][1]//following-sibling::div[1]/text()").extract_first(default='').strip()
+        result['recordFirstDate']=mainContainer.xpath("div/div[contains(.,'备案时间')][1]//following-sibling::div[1]/text()").re_first(r'(\d+-\d+-\d+)')
+        # 备案时间(变更)-去掉非日期文字
         #result['recordChangeDate']=mainContainer.xpath('div/div[8]/div/text()').get().strip()
-        result['recordChangeDate']=mainContainer.xpath("div/div[contains(.,'备案时间')][2]//following-sibling::div[1]/text()").extract_first(default='').strip()
+        result['recordChangeDate']=mainContainer.xpath("div/div[contains(.,'备案时间')][2]//following-sibling::div[1]/text()").re_first(r'(\d+-\d+-\d+)')
+        # 其他机构地址
+        result['otherAddresss']=mainContainer.xpath("div/div[contains(.,'其他机构地址')]//following-sibling::div[1]/text()").extract()
+        result['otherAddresss']=[i.strip() for i in result['otherAddresss'] if i and i.strip() != '']
+        
 
         # 备案专业和主要研究者信息 
         result['recordingProfessions']=[]
@@ -98,7 +112,7 @@ class BeianSpider(scrapy.Spider):
             result['inspectionInformations'].append(inspectionInformation)
 
         yield result
-
+    
     def log_error_back(self, failure):
          # 日志记录所有的异常信息
         self.logger.error(repr(failure))

@@ -47,6 +47,8 @@ class BeianItem(scrapy.Item): # 备案管理index
     recordingProfessions=scrapy.Field()
     # 监督检查信息-列表
     inspectionInformations=scrapy.Field()
+    # 其他机构地址
+    otherAddresss=scrapy.Field()
 
 class RecordingProfession(scrapy.Item): # 备案专业和主要研究者信息
     # 专业名称
