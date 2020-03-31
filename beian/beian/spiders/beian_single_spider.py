@@ -4,6 +4,7 @@
 Topic: sample
 Desc :
 """
+
 from beian.items import BeianItem, InspectionInformation, RecordingProfession
 import scrapy
 import json
@@ -12,14 +13,14 @@ import time
 import math
 
 
-class BeianSpider(scrapy.Spider):
-    name = 'beian'
+class BeianSingleSpider(scrapy.Spider):
+    name = 'beian_siangle'
     # allowed_domains = ["cfdi.org.cn"]
     pageSize = 10
     # start_urls = [
     #     'http://beian.cfdi.org.cn:9000/CTMDS/pub/PUB010100.do?method=handle06?pageSize=10'
     # ]
-
+    #http://beian.cfdi.org.cn:9000/CTMDS/apps/pub/drugPublic.jsp
     def start_requests(self):
         indexUrl = "http://beian.cfdi.org.cn:9000/CTMDS/pub/PUB010100.do?method=handle06&__dt={timespan}".format(
             timespan=datetime.datetime.now().strftime('%Y%m%d%H%M%S'))
