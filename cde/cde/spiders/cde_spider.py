@@ -93,7 +93,7 @@ class CDESPider(scrapy.Spider):
             projectItem['testStopDate']=cdeContainer.xpath(".//div[@class='STYLE2'][contains(., '试验终止日期')]/following-sibling::table[1]//td/text()").extract_first(default='').strip()
             #八、试验状态
             #projectItem['studyStatus2']=cdeContainer.xpath('.//table[8]//tr/td').extract_first(default='').strip()      
-            projectItem['studyStatus2']=cdeContainer.xpath(".//div[@class='STYLE2'][contains(., '试验状态')]/following-sibling::table[1]//td/text()").extract_first(default='').replace("\n","").replace('\t','').replace('\r','').strip()
+            projectItem['studyStatus2']=re.sub(r"\s+", "",cdeContainer.xpath(".//div[@class='STYLE2'][contains(., '试验状态')]/following-sibling::table[1]//td/text()").extract_first(default='').strip())
 
             cdeItem['Project']=dict(projectItem)
 
@@ -156,28 +156,28 @@ class CDESPider(scrapy.Spider):
             cdeItem['ClinicalTrialInformation']=dict(clinicalTrialInfomation)
 
             ## 主要研究者信息
-            mainInvestigator=MainInvestigatorItem()
-            mainInvestigatorContainer=cdeContainer.xpath('table[6]//tr[2]/td/table')
-            # 姓名 #去除人名中的杂质 如:(叶定伟，医学博士)
-            # tempName=mainInvestigatorContainer.xpath('tr[1]/td[2]/text()').extract_first(default='').strip()
-            tempNames=re.split('[,，]',mainInvestigatorContainer.xpath('.//td[contains(.,"姓名")]//following-sibling::td[1]/text()').extract_first(default='').strip())
-            mainInvestigator['name'] =tempNames[0] if len(tempNames)>0 else ''
-            # 获取专业认证 从姓名中解析 如:(叶定伟，医学博士)
-            mainInvestigator['certification'] = tempNames[1] if len(tempNames)>1 else ''
-            # 职称
-            mainInvestigator['jobTitle'] =mainInvestigatorContainer.xpath('.//td[contains(.,"职称")]//following-sibling::td[1]/text()').extract_first(default='').strip()
-            # 电话
-            mainInvestigator['tel'] =mainInvestigatorContainer.xpath('.//td[contains(.,"电话")]//following-sibling::td[1]/text()').extract_first(default='').strip()
-            # Email
-            mainInvestigator['email'] =mainInvestigatorContainer.xpath('.//td[contains(.,"Email")]//following-sibling::td[1]/text()').extract_first(default='').strip()
-            # 地址
-            mainInvestigator['address'] =mainInvestigatorContainer.xpath('.//td[contains(.,"邮政地址")]//following-sibling::td[1]/text()').extract_first(default='').strip()
-            # 邮编
-            mainInvestigator['zipCode'] = mainInvestigatorContainer.xpath('.//td[contains(.,"邮编")]//following-sibling::td[1]/text()').extract_first(default='').strip()
-            # 单位名称
-            mainInvestigator['companyName'] =mainInvestigatorContainer.xpath('.//td[contains(.,"单位名称")]//following-sibling::td[1]/text()').extract_first(default='').strip()
-            
-            cdeItem['MainInvestigators']=dict(mainInvestigator)
+            cdeItem['MainInvestigators']=[]
+            for table in cdeContainer.xpath('table[6]//tr[2]/td/table'):
+                mainInvestigator=MainInvestigatorItem()
+                # 姓名 #去除人名中的杂质 如:(叶定伟，医学博士)
+                # tempName=table.xpath('tr[1]/td[2]/text()').extract_first(default='').strip()
+                tempNames=re.split('[,，]',table.xpath('.//td[contains(.,"姓名")]//following-sibling::td[1]/text()').extract_first(default='').strip())
+                mainInvestigator['name'] =tempNames[0] if len(tempNames)>0 else ''
+                # 获取专业认证 从姓名中解析 如:(叶定伟，医学博士)
+                mainInvestigator['certification'] = tempNames[1] if len(tempNames)>1 else ''
+                # 职称
+                mainInvestigator['jobTitle'] =table.xpath('.//td[contains(.,"职称")]//following-sibling::td[1]/text()').extract_first(default='').strip()
+                # 电话
+                mainInvestigator['tel'] =table.xpath('.//td[contains(.,"电话")]//following-sibling::td[1]/text()').extract_first(default='').strip()
+                # Email
+                mainInvestigator['email'] =table.xpath('.//td[contains(.,"Email")]//following-sibling::td[1]/text()').extract_first(default='').strip()
+                # 地址
+                mainInvestigator['address'] =table.xpath('.//td[contains(.,"邮政地址")]//following-sibling::td[1]/text()').extract_first(default='').strip()
+                # 邮编
+                mainInvestigator['zipCode'] = table.xpath('.//td[contains(.,"邮编")]//following-sibling::td[1]/text()').extract_first(default='').strip()
+                # 单位名称
+                mainInvestigator['companyName'] =table.xpath('.//td[contains(.,"单位名称")]//following-sibling::td[1]/text()').extract_first(default='').strip()
+                cdeItem['MainInvestigators'].append(dict(mainInvestigator))
 
             ## 各参加机构信息
             cdeItem['Hospitals']=[]
