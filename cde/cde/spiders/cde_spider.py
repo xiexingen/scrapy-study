@@ -177,7 +177,10 @@ class CDESPider(scrapy.Spider):
                 mainInvestigator['zipCode'] = table.xpath('.//td[contains(.,"邮编")]//following-sibling::td[1]/text()').extract_first(default='').strip()
                 # 单位名称
                 mainInvestigator['companyName'] =table.xpath('.//td[contains(.,"单位名称")]//following-sibling::td[1]/text()').extract_first(default='').strip()
-                cdeItem['MainInvestigators'].append(dict(mainInvestigator))
+                
+                if self.isAllEmpty(mainInvestigator) is False :
+                    cdeItem['MainInvestigators'].append(dict(mainInvestigator))
+                    
 
             ## 各参加机构信息
             cdeItem['Hospitals']=[]
@@ -210,8 +213,10 @@ class CDESPider(scrapy.Spider):
                 ec['approveResult'] = tr.xpath('td[3]/text()').extract_first(default='').strip()
                 # 审查日期
                 ec['approveDate'] = tr.xpath('td[4]/text()').extract_first(default='').strip()
-
-                cdeItem['ECs'].append(dict(ec))
+                
+                if self.isAllEmpty(ec) is False :
+                    cdeItem['ECs'].append(dict(ec))
+                
         
             yield cdeItem
         except Exception as e:
@@ -219,6 +224,13 @@ class CDESPider(scrapy.Spider):
             self.logger.error(e)
 
 
+    def isAllEmpty(self,item):
+        allEmpty=True
+        for key in item.fields:
+            if len(item.get(key))>0:
+                allEmpty=False
+                break
+        return allEmpty
         
     def log_error_back(self, failure):
          # 日志记录所有的异常信息
