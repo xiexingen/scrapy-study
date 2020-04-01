@@ -14,7 +14,7 @@ import re
 
 class CDESPider(scrapy.Spider):
     name = 'cde'
-    pageSize = 1
+    pageSize = 10
     allowed_domains = ["chinadrugtrials.org.cn"]
     # start_urls = [
     #     'http://www.chinadrugtrials.org.cn/eap/clinicaltrials.searchlist',

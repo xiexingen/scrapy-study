@@ -8,7 +8,7 @@ import random
 from scrapy import signals
 
 
-class YscroSpiderMiddleware(object):
+class TrialosSpiderMiddleware(object):
     # Not all methods need to be defined. If a method is not defined,
     # scrapy acts as if the spider middleware does not modify the
     # passed objects.
@@ -56,7 +56,7 @@ class YscroSpiderMiddleware(object):
         spider.logger.info('Spider opened: %s' % spider.name)
 
 
-class YscroDownloaderMiddleware(object):
+class TrialosDownloaderMiddleware(object):
     # Not all methods need to be defined. If a method is not defined,
     # scrapy acts as if the downloader middleware does not modify the
     # passed objects.
@@ -101,7 +101,6 @@ class YscroDownloaderMiddleware(object):
 
     def spider_opened(self, spider):
         spider.logger.info('Spider opened: %s' % spider.name)
-
 
 
 class RandomUserAgentMiddleware(object): # 自定义UserAgent中间件
