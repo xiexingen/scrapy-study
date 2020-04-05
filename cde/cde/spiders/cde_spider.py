@@ -26,8 +26,8 @@ class CDESPider(scrapy.Spider):
         yield scrapy.FormRequest(indexUrl, callback=self.parse, method='POST',formdata=form_data)
 
     def parse(self, response):
-        total=int(response.xpath('//*[@id="searchfrm"]/div/div[3]/div[1]/a[1]/text()').extract_first().strip())
-        totalPages =math.ceil(total/self.pageSize)
+        totalPages=int(response.xpath('//*[@id="searchfrm"]/div/div[3]/div[1]/a[1]/text()').extract_first().strip())
+        #totalPages =math.ceil(total/self.pageSize)
         # indexUrl = "http://www.chinadrugtrials.org.cn/eap/clinicaltrials.searchlist"
         detailUrl="http://www.chinadrugtrials.org.cn/eap/clinicaltrials.searchlistdetail"
         for page in range(1,totalPages):       
