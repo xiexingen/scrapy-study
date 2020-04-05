@@ -30,7 +30,7 @@ class CDESPider(scrapy.Spider):
         totalPages =math.ceil(total/self.pageSize)
         # indexUrl = "http://www.chinadrugtrials.org.cn/eap/clinicaltrials.searchlist"
         detailUrl="http://www.chinadrugtrials.org.cn/eap/clinicaltrials.searchlistdetail"
-        for page in range(1, totalPages):       
+        for page in range(1,totalPages):       
             form_data = {'ckm_index': str(page),'pagesize': str(self.pageSize),'currentpage':'1','rule':'CTR','sort2':'desc','sort':'desc'}
             yield scrapy.FormRequest(detailUrl, callback=self.parse_detail, method='POST',formdata=form_data)
 
@@ -124,7 +124,7 @@ class CDESPider(scrapy.Spider):
             clinicalTrialInfomation=ClinicalTrialInformationItem()
             clinicalTrialContainer=cdeContainer.xpath('./table[3]')
             #试验目的
-            clinicalTrialInfomation['testPurpose']=clinicalTrialContainer.xpath('tr[2]/td/text()').extract_first(default='').strip()
+            clinicalTrialInfomation['testPurpose']=re.sub(r"\s+", "", clinicalTrialContainer.xpath('tr[2]/td/text()').extract_first(default='').strip())
             #试验分类
             clinicalTrialInfomation['testType']=clinicalTrialContainer.xpath('tr[4]/td/table//tr[1]/td[3]/text()').extract_first(default='').strip()
             #试验分期
@@ -145,7 +145,7 @@ class CDESPider(scrapy.Spider):
             #健康受试者
             clinicalTrialInfomation['subjectHealth']=clinicalTrialContainer.xpath('tr[8]/td[2]/text()').extract_first(default='').strip()
             # 目标入组人数
-            clinicalTrialInfomation['subjectTargetEnrollment']=clinicalTrialContainer.xpath('tr[11]/td[2]/text()').extract_first(default='').strip()
+            clinicalTrialInfomation['subjectTargetEnrollment']=re.sub(r"\s+", "", clinicalTrialContainer.xpath('tr[11]/td[2]/text()').extract_first(default='').strip())
             # 实际入组人数
             clinicalTrialInfomation['subjectActualEnrollment']=clinicalTrialContainer.xpath('tr[12]/td[2]/text()').extract_first(default='').strip()
             # 数据安全监察委员会
@@ -160,8 +160,7 @@ class CDESPider(scrapy.Spider):
             for table in cdeContainer.xpath('table[6]//tr[2]/td/table'):
                 mainInvestigator=MainInvestigatorItem()
                 # 姓名 #去除人名中的杂质 如:(叶定伟，医学博士)
-                # tempName=table.xpath('tr[1]/td[2]/text()').extract_first(default='').strip()
-                tempNames=re.split('[,，]',table.xpath('.//td[contains(.,"姓名")]//following-sibling::td[1]/text()').extract_first(default='').strip())
+                tempNames=self.matchNameAndTitle(table.xpath('.//td[contains(.,"姓名")]//following-sibling::td[1]/text()'))
                 mainInvestigator['name'] =tempNames[0] if len(tempNames)>0 else ''
                 # 获取专业认证 从姓名中解析 如:(叶定伟，医学博士)
                 mainInvestigator['certification'] = tempNames[1] if len(tempNames)>1 else ''
@@ -178,7 +177,7 @@ class CDESPider(scrapy.Spider):
                 # 单位名称
                 mainInvestigator['companyName'] =table.xpath('.//td[contains(.,"单位名称")]//following-sibling::td[1]/text()').extract_first(default='').strip()
                 
-                if self.isAllEmpty(mainInvestigator) is False :
+                if self.is_all_empty(mainInvestigator) is False :
                     cdeItem['MainInvestigators'].append(dict(mainInvestigator))
                     
 
@@ -188,17 +187,25 @@ class CDESPider(scrapy.Spider):
                 hospital=HospitalItem()
                 # 序号
                 hospital['no']=tr.xpath('td[1]/text()').extract_first(default='').strip()
-                # 机构名称
+                # 机构名称                
                 hospital['name'] = tr.xpath('td[2]/text()').extract_first(default='').strip()
                 # 主要研究者
-                hospital['mainSponsorName'] = tr.xpath('td[3]/text()').extract_first(default='').strip()
+                tempNames=self.matchNameAndTitle(tr.xpath('td[3]/text()'))
+                hospital['mainSponsorName'] = tempNames[0] if len(tempNames)>0 else ''
                 # 国家
                 hospital['state'] = tr.xpath('td[4]/text()').extract_first(default='').strip()
                 # 所在省
                 hospital['province'] = tr.xpath('td[5]/text()').extract_first(default='').strip()
                 # 所在市
                 hospital['city'] = tr.xpath('td[6]/text()').extract_first(default='').strip()
-                cdeItem['Hospitals'].append(dict(hospital))
+                
+                if len(tempNames)>1:
+                    for item in tempNames:
+                        newHospital=hospital.copy()
+                        newHospital['mainSponsorName']=item
+                        cdeItem['Hospitals'].append(dict(newHospital))
+                else:
+                    cdeItem['Hospitals'].append(dict(hospital))
 
 
             ## 伦理委员会信息
@@ -214,7 +221,7 @@ class CDESPider(scrapy.Spider):
                 # 审查日期
                 ec['approveDate'] = tr.xpath('td[4]/text()').extract_first(default='').strip()
                 
-                if self.isAllEmpty(ec) is False :
+                if self.is_all_empty(ec) is False :
                     cdeItem['ECs'].append(dict(ec))
                 
         
@@ -224,14 +231,20 @@ class CDESPider(scrapy.Spider):
             self.logger.error(e)
 
 
-    def isAllEmpty(self,item):
+    def is_all_empty(self,item):
         allEmpty=True
         for key in item.fields:
             if len(item.get(key))>0:
                 allEmpty=False
                 break
         return allEmpty
-        
+
+    def matchNameAndTitle(self,selector):
+        matchs=selector.re('([\u4e00-\u9fa5]+)')
+        if len(matchs)==0:
+            #matchs=re.split('[,;，；、]',selector.extract_first(default='').strip())
+            matchs=[selector.extract_first(default='').strip()]
+        return matchs
     def log_error_back(self, failure):
          # 日志记录所有的异常信息
         self.logger.error(repr(failure))
