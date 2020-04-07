@@ -10,12 +10,21 @@ from w3lib.html import remove_comments
 import math
 import json
 import re
+import os
+import sys
 
+def getAllcertification():
+    result=[]
+    with open(os.path.abspath('cde/assets/certification.txt'),'rt',encoding="UTF-8") as f:
+        for line in f:
+            result.append(line.strip('\n'))
+    return result
 
 class CDESPider(scrapy.Spider):
     name = 'cde'
     pageSize = 10
     allowed_domains = ["chinadrugtrials.org.cn"]
+    certifications=getAllcertification()
     # start_urls = [
     #     'http://www.chinadrugtrials.org.cn/eap/clinicaltrials.searchlist',
     # ]
@@ -24,6 +33,11 @@ class CDESPider(scrapy.Spider):
         indexUrl = "http://www.chinadrugtrials.org.cn/eap/clinicaltrials.searchlist"
         form_data = {'pagesize': str(self.pageSize), 'currentpage': '1'}
         yield scrapy.FormRequest(indexUrl, callback=self.parse, method='POST',formdata=form_data)
+
+        # ## 单条
+        # detailUrl="http://www.chinadrugtrials.org.cn/eap/clinicaltrials.searchlistdetail"
+        # form_data = {'ckm_index':'1','pagesize': str(self.pageSize),'currentpage':'1','rule':'CTR','sort2':'desc','sort':'desc','keywords':'CTR20171265'}
+        # yield scrapy.FormRequest(detailUrl, callback=self.parse_detail, method='POST',formdata=form_data)
 
     def parse(self, response):
         totalPages=int(response.xpath('//*[@id="searchfrm"]/div/div[3]/div[1]/a[1]/text()').extract_first().strip())
@@ -189,8 +203,8 @@ class CDESPider(scrapy.Spider):
                 hospital['no']=tr.xpath('td[1]/text()').extract_first(default='').strip()
                 # 机构名称                
                 hospital['name'] = tr.xpath('td[2]/text()').extract_first(default='').strip()
-                # 主要研究者
-                tempNames=self.matchNameAndTitle(tr.xpath('td[3]/text()'))
+                # 主要研究者(不要职称，只保留研究者姓名)
+                tempNames=self.matchMultipleName(tr.xpath('td[3]/text()'))
                 hospital['mainSponsorName'] = tempNames[0] if len(tempNames)>0 else ''
                 # 国家
                 hospital['state'] = tr.xpath('td[4]/text()').extract_first(default='').strip()
@@ -239,12 +253,25 @@ class CDESPider(scrapy.Spider):
                 break
         return allEmpty
 
+    # 匹配姓名以及所获证书职称 张三,博士
     def matchNameAndTitle(self,selector):
         matchs=selector.re('([\u4e00-\u9fa5]+)')
         if len(matchs)==0:
             #matchs=re.split('[,;，；、]',selector.extract_first(default='').strip())
             matchs=[selector.extract_first(default='').strip()]
         return matchs
+
+    # 匹配单个或者多个姓名 张三,医学博士/张三，李四 只保留姓名
+    def matchMultipleName(self,selector):
+        matchs=selector.re('([\u4e00-\u9fa5]+)')
+        if len(matchs)==0:
+            #matchs=re.split('[,;，；、]',selector.extract_first(default='').strip())
+            matchs=[selector.extract_first(default='').strip()]
+        for ele in matchs:
+            if ele in self.certifications:
+                matchs.remove(ele)
+        return matchs
+    
     def log_error_back(self, failure):
          # 日志记录所有的异常信息
         self.logger.error(repr(failure))

@@ -9,10 +9,10 @@
             "type": "python",
             "request": "launch",
             "module": "scrapy",
-            "cwd": "${workspaceRoot}/trialos", // 项目路径
+            "cwd": "${workspaceRoot}/cde", // 项目路径
             "args": [
                 "crawl",
-                "trialos" // 爬虫名称
+                "cde" // 爬虫名称
             ]
         }
     ]
