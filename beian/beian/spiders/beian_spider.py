@@ -42,7 +42,7 @@ class BeianSpider(scrapy.Spider):
         # 请求其他页码的数据
         total =int(repJson['totalRows'])
         totalPages =math.ceil(total/self.pageSize)
-        for page in range(1, totalPages):
+        for page in range(1, 2):
             indexUrl = "http://beian.cfdi.org.cn:9000/CTMDS/pub/PUB010100.do?method=handle06&_dt={timespan}".format(
             timespan=datetime.datetime.now().strftime('%Y%m%d%H%M%S'))
             form_data = {'pageSize': str(self.pageSize), 'curPage': str(page)}
@@ -118,3 +118,6 @@ class BeianSpider(scrapy.Spider):
         self.logger.error(repr(failure))
         request = failure.request
         self.logger.error('error on %s', request.url)
+
+    def closed( self, reason ):
+        print('execute end')

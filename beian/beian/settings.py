@@ -28,6 +28,7 @@ ROBOTSTXT_OBEY = True
 # See https://docs.scrapy.org/en/latest/topics/settings.html#download-delay
 # See also autothrottle settings and docs
 DOWNLOAD_DELAY = 0.4 # 250ms
+RANDOMIZE_DOWNLOAD_DELAY = True
 # The download delay setting will honor only one of:
 #CONCURRENT_REQUESTS_PER_DOMAIN = 16
 #CONCURRENT_REQUESTS_PER_IP = 16
@@ -64,10 +65,10 @@ DOWNLOAD_DELAY = 0.4 # 250ms
 
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
-#ITEM_PIPELINES = {
+ITEM_PIPELINES = {
     #'crawlab.pipelines.CrawlabMongoPipeline': 888
-#    'beian.pipelines.BeianPipeline': 300,
-#}
+    'beian.pipelines.BeianMongoDBPipeline': 300,
+}
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/autothrottle.html
@@ -90,6 +91,9 @@ DOWNLOAD_DELAY = 0.4 # 250ms
 #HTTPCACHE_IGNORE_HTTP_CODES = []
 #HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
 
+MONGO_URI='mongodb://111.230.249.41:27017'
+MONGO_DATABASE='spiders'
+
 FEED_EXPORT_ENCODING = 'utf-8-sig'
-# LOG_LEVEL = "WARN"  # 设置日志等级。 默认debug级别
+LOG_LEVEL = "WARN"  # 设置日志等级。 默认debug级别
 # LOG_FILE = "./log.log"  # 设置日志保存位置
