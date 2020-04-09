@@ -34,9 +34,9 @@ class CDESPider(scrapy.Spider):
         form_data = {'pagesize': str(self.pageSize), 'currentpage': '1'}
         yield scrapy.FormRequest(indexUrl, callback=self.parse, method='POST',formdata=form_data)
 
-        # ## 单条
+        ## 单条
         # detailUrl="http://www.chinadrugtrials.org.cn/eap/clinicaltrials.searchlistdetail"
-        # form_data = {'ckm_index':'1','pagesize': str(self.pageSize),'currentpage':'1','rule':'CTR','sort2':'desc','sort':'desc','keywords':'CTR20171265'}
+        # form_data = {'ckm_index':'1','pagesize': str(self.pageSize),'currentpage':'1','rule':'CTR','sort2':'desc','sort':'desc','keywords':'CTR20150217'}
         # yield scrapy.FormRequest(detailUrl, callback=self.parse_detail, method='POST',formdata=form_data)
 
     def parse(self, response):
@@ -255,7 +255,11 @@ class CDESPider(scrapy.Spider):
 
     # 匹配姓名以及所获证书职称 张三,博士
     def matchNameAndTitle(self,selector):
-        matchs=selector.re('([\u4e00-\u9fa5]+)')
+        content=selector.extract_first(default='').strip()
+        # 处理两个字姓名的中间带空格的问题 张 三
+        content=re.sub(r'^([\u4e00-\u9fa5])\s+([\u4e00-\u9fa5])$', r'\1\2',content)
+        matchs=re.findall('([\u4e00-\u9fa5]+)',content)
+        # matchs=selector.re('([\u4e00-\u9fa5]+)')
         if len(matchs)==0:
             #matchs=re.split('[,;，；、]',selector.extract_first(default='').strip())
             matchs=[selector.extract_first(default='').strip()]
@@ -263,7 +267,10 @@ class CDESPider(scrapy.Spider):
 
     # 匹配单个或者多个姓名 张三,医学博士/张三，李四 只保留姓名
     def matchMultipleName(self,selector):
-        matchs=selector.re('([\u4e00-\u9fa5]+)')
+        content=selector.extract_first(default='').strip()
+        # 处理两个字姓名的中间带空格的问题 张 三
+        content=re.sub(r'^([\u4e00-\u9fa5])\s+([\u4e00-\u9fa5])$', r'\1\2',content)
+        matchs=re.findall('([\u4e00-\u9fa5]+)',content)
         if len(matchs)==0:
             #matchs=re.split('[,;，；、]',selector.extract_first(default='').strip())
             matchs=[selector.extract_first(default='').strip()]
