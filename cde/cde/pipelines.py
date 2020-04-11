@@ -10,7 +10,7 @@ import json
 def FindFirstValue(arr,prop,value,getProp):
     searchValue=''
     for ele in arr:
-        if(ele[prop]==value):
+        if(ele[prop]==value and len(ele[getProp])>0):
             searchValue=ele[getProp]
             break
     return searchValue
