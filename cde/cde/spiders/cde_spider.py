@@ -34,7 +34,7 @@ class CDESPider(scrapy.Spider):
         form_data = {'pagesize': str(self.pageSize), 'currentpage': '1'}
         yield scrapy.FormRequest(indexUrl, callback=self.parse, method='POST',formdata=form_data)
 
-        ## 单条
+        # # 单条
         # detailUrl="http://www.chinadrugtrials.org.cn/eap/clinicaltrials.searchlistdetail"
         # form_data = {'ckm_index':'1','pagesize': str(self.pageSize),'currentpage':'1','rule':'CTR','sort2':'desc','sort':'desc','keywords':'CTR20130174'}
         # yield scrapy.FormRequest(detailUrl, callback=self.parse_detail, method='POST',formdata=form_data)
@@ -263,8 +263,6 @@ class CDESPider(scrapy.Spider):
         if len(matchs)==0:
             #matchs=re.split('[,;，；、]',selector.extract_first(default='').strip())
             matchs=[selector.extract_first(default='').strip()]
-        if(len(matchs)==0 and matchs[0]=='天津市肿瘤医院'):
-            matchs[0]=''
         return matchs
 
     # 匹配单个或者多个姓名 张三,医学博士/张三，李四 只保留姓名

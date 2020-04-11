@@ -6,6 +6,36 @@
 # See: https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 import json
 
+# 从arr列表中查找属性值prop为value的对象，并获取getProp属性的值
+def FindFirstValue(arr,prop,value,getProp):
+    searchValue=''
+    for ele in arr:
+        if(ele[prop]==value):
+            searchValue=ele[getProp]
+            break
+    return searchValue
+
+# 纠正里面的错误数据
+class CorrectPipe(object):
+     def process_item(self, item, spider):
+        certifications=spider.certifications
+        # 纠正主要研究者姓名是医院名称的
+        for ele in item['MainInvestigators']:
+            if ele["name"] in certifications:
+                ele["name"]=''
+
+        # 纠正机构姓名是机构名称的错误数据
+        for ele in item['Hospitals']:
+            if ele["mainSponsorName"] in certifications:
+                ele["mainSponsorName"]=''
+
+        # 如果主要研究者姓名是空，就去机构信息中找第一条对应的非空人名
+        for ele in item['MainInvestigators']:
+            if(len(ele["name"])==0):
+                ele["name"]=FindFirstValue(item['Hospitals'],'name',ele["companyName"],'mainSponsorName')
+
+        return item
+
 class JsonFilePipeLine(object):
     # def __init__(self):
     #     #self.file = open('novel.json', 'wb')
