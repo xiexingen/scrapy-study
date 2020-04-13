@@ -36,8 +36,7 @@ class CDESPider(scrapy.Spider):
 
         # # 单条
         # detailUrl="http://www.chinadrugtrials.org.cn/eap/clinicaltrials.searchlistdetail"
-        # CTR20191251
-        # form_data = {'ckm_index':'1','pagesize': str(self.pageSize),'currentpage':'1','rule':'CTR','sort2':'desc','sort':'desc','keywords':'CTR20130174'}
+        # form_data = {'ckm_index':'1','pagesize': str(self.pageSize),'currentpage':'1','rule':'CTR','sort2':'desc','sort':'desc','keywords':'CTR20192726'}
         # yield scrapy.FormRequest(detailUrl, callback=self.parse_detail, method='POST',formdata=form_data)
 
     def parse(self, response):
@@ -275,10 +274,7 @@ class CDESPider(scrapy.Spider):
         if len(matchs)==0:
             #matchs=re.split('[,;，；、]',selector.extract_first(default='').strip())
             matchs=[selector.extract_first(default='').strip()]
-        for ele in matchs:
-            if ele in self.certifications:
-                matchs.remove(ele)
-        return matchs
+        return [ele for ele in matchs if not ele in self.certifications]
     
     def log_error_back(self, failure):
          # 日志记录所有的异常信息
