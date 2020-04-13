@@ -36,6 +36,7 @@ class CDESPider(scrapy.Spider):
 
         # # 单条
         # detailUrl="http://www.chinadrugtrials.org.cn/eap/clinicaltrials.searchlistdetail"
+        # CTR20191251
         # form_data = {'ckm_index':'1','pagesize': str(self.pageSize),'currentpage':'1','rule':'CTR','sort2':'desc','sort':'desc','keywords':'CTR20130174'}
         # yield scrapy.FormRequest(detailUrl, callback=self.parse_detail, method='POST',formdata=form_data)
 
