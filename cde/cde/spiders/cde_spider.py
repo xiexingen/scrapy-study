@@ -36,7 +36,7 @@ class CDESPider(scrapy.Spider):
 
         # # 单条
         # detailUrl="http://www.chinadrugtrials.org.cn/eap/clinicaltrials.searchlistdetail"
-        # form_data = {'ckm_index':'1','pagesize': str(self.pageSize),'currentpage':'1','rule':'CTR','sort2':'desc','sort':'desc','keywords':'CTR20192726'}
+        # form_data = {'ckm_index':'1','pagesize': str(self.pageSize),'currentpage':'1','rule':'CTR','sort2':'desc','sort':'desc','keywords':'CTR20192719'}
         # yield scrapy.FormRequest(detailUrl, callback=self.parse_detail, method='POST',formdata=form_data)
 
     def parse(self, response):
@@ -272,8 +272,10 @@ class CDESPider(scrapy.Spider):
         content=re.sub(r'^([\u4e00-\u9fa5])\s+([\u4e00-\u9fa5])$', r'\1\2',content)
         matchs=re.findall('([\u4e00-\u9fa5]+)',content)
         if len(matchs)==0:
-            #matchs=re.split('[,;，；、]',selector.extract_first(default='').strip())
-            matchs=[selector.extract_first(default='').strip()]
+            # 如果是英语单词 则再split一下多个人的情况，其他不处理了
+            matchs=re.split('[,;，；、]',content)
+            if len(matchs)==0:
+                matchs=[content]
         return [ele for ele in matchs if not ele in self.certifications]
     
     def log_error_back(self, failure):
